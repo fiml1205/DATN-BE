@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cube Face Render</title>
+  <style>body { margin: 0; overflow: hidden; }</style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const face = urlParams.get('face');
+    const image = urlParams.get('image');
+
+    const renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true });
+    renderer.setSize(2048, 2048);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(90, 1, 0.1, 1000);
+    camera.position.set(0, 0, 0);
+
+    const faceDirections = {
+      negx: [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)],
+      posx: [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0)],
+      posy: [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1)],
+      negy: [new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)],
+      posz: [new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)],
+      negz: [new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)],
+    };
+
+    const tex = new THREE.TextureLoader().load(image, () => {
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(500, 64, 64),
+        new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide })
+      );
+      scene.add(sphere);
+
+      const [dir, up] = faceDirections[face];
+      camera.up.copy(up);
+      camera.lookAt(dir);
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+const express = require("express");
+const router = express.Router();
+const formData = require('express-form-data');
+const functions = require('../services/functions.js')
+const controller = require('../controllers/user.js')
+const path = require('path');
+const { uploadFile } = require('../services/functions.js');
+
+router.post('/login', formData.parse(), controller.login);
+router.post('/register', formData.parse(), controller.register);
+router.post('/company/updateInfor',
+    functions.checkToken,
+    uploadFile(path.join(__dirname, '../public/images/company/introduce'), 5),
+    controller.updateInforCompany
+);
+router.post('/getComments', formData.parse(), controller.getComments);
+router.post('/comment', formData.parse(), controller.comment);
+
+module.exports = router

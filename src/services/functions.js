@@ -52,11 +52,11 @@ exports.error = (res, message, code = 500) => {
         return res.status(code).json({ data: null, code, error: message });
     } catch (e) {
         return false;
-    }
+    }   
 };
 
 // get max Id
-exports.getMaxID = async (model, id) => {
+exports.getMaxId = async (model, id) => {
     try {
         const sortCondition = {};
         sortCondition[id] = -1;
@@ -112,7 +112,7 @@ exports.validateEmail = async (email) => {
 };
 
 // handle upload images
-function storageFile(uploadPath, userID) {
+function storageFile(uploadPath, userId) {
     return multer.diskStorage({
         destination: function (req, file, cb) {
             if (!fs.existsSync(uploadPath)) {
@@ -121,7 +121,7 @@ function storageFile(uploadPath, userID) {
             cb(null, uploadPath);
         },
         filename: function (req, file, cb) {
-            const imageName = `${Date.now()}-${userID}-${file.originalname}`;
+            const imageName = `${Date.now()}-${userId}-${file.originalname}`;
             if (!req.savedFileNames) {
                 req.savedFileNames = [];
             }
@@ -131,33 +131,47 @@ function storageFile(uploadPath, userID) {
     });
 }
 
-exports.uploadFile = (filePath, limit) => (req, res, next) => {
-    const userID = req.user.data.userID
-    const upload = multer({
-        storage: storageFile(filePath, userID),
-        fileFilter: function (req, file, callback) {
-            try {
-                const listAllow = ['.png', '.jpg', '.gif', '.jpeg', '.docx', '.pdf'];
-                let ext = path.extname(file.originalname).toLowerCase();
+exports.uploadFile = (filePath, limit, fieldName = 'images') => {
+    return (req, res, next) => {
+        const userId = req?.user?.data?.userId || req.body.userId || req.query.userId || 'anonymous';
+
+        const storage = multer.diskStorage({
+            destination: (req, file, cb) => {
+                if (!fs.existsSync(filePath)) {
+                    fs.mkdirSync(filePath, { recursive: true });
+                }
+                cb(null, filePath);
+            },
+            filename: (req, file, cb) => {
+                const imageName = `${Date.now()}-${userId}-${file.originalname}`;
+                req.savedFileNames = req.savedFileNames || [];
+                req.savedFileNames.push(imageName);
+                cb(null, imageName);
+            },
+        });
+
+        const upload = multer({
+            storage,
+            fileFilter: (req, file, callback) => {
+                const ext = path.extname(file.originalname).toLowerCase();
+                const listAllow = ['.png', '.jpg', '.jpeg', '.gif'];
                 if (!listAllow.includes(ext)) {
-                    return callback(new Error('Chỉ cho phép upload file ảnh và tài liệu'));
+                    return callback(new Error('Chỉ cho phép upload file ảnh'));
                 }
                 callback(null, true);
-            } catch (e) {
-                return callback(new Error('Error processing file upload.'));
-            }
-        }
-    }).array('images', limit);
+            },
+        }).array(fieldName, limit);
 
-    upload(req, res, function (err) {
-        if (err && err instanceof multer.MulterError) {
-            return res.status(400).json({ error: 'Xảy ra lỗi trong quá trình upload ảnh' });
-        } else if (err) {
-            console.log(err)
-            return res.status(400).json({ error: err.message });
-        }
-        next();
-    });
+        upload(req, res, function (err) {
+             console.log('DEBUG req.files:', req.files); 
+            if (err instanceof multer.MulterError) {
+                return res.status(400).json({ error: 'Xảy ra lỗi trong quá trình upload ảnh (Multer)' });
+            } else if (err) {
+                return res.status(400).json({ error: err.message });
+            }
+            next();
+        });
+    };
 };
 
 
