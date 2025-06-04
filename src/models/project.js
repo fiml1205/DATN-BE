@@ -11,6 +11,7 @@ const hotspotSchema = new mongoose.Schema({
 
 const sceneSchema = new mongoose.Schema({
   id: String,
+  name: String,
   original: String,
   cubePaths: [String],
   audio: String,
@@ -19,7 +20,7 @@ const sceneSchema = new mongoose.Schema({
 });
 
 const tourStepSchema = new mongoose.Schema({
-  day: Number,
+  day: String,
   content: String,
 });
 
@@ -28,8 +29,10 @@ const projectSchema = new mongoose.Schema({
   userId: String,
   title: String,
   description: String,
+  coverImage: String,
   departureDate: String,
   price: Number,
+  sale: String,
   tourSteps: [tourStepSchema],
   scenes: [sceneSchema],
 }, { timestamps: true });

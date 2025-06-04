@@ -5,7 +5,7 @@ const puppeteer = require('puppeteer');
 const functions = require('../services/functions');
 const Project = require('../models/project');
 
-exports.saveProject = async (req, res) => {
+exports.createProject = async (req, res) => {
   try {
     const data = req.body;
     const exists = await Project.findOne({ projectId: data.projectId });
@@ -39,6 +39,35 @@ exports.getProject = async (req, res) => {
   }
 };
 
+exports.editProject = async (req, res) => {
+  const { projectId } = req.params;
+
+  try {
+    const updated = await Project.findOneAndUpdate(
+      { projectId },
+      req.body,
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Không tìm thấy dự án' });
+    }
+
+    return res.json({ message: '✅ Đã cập nhật tour', project: updated });
+  } catch (err) {
+    console.error('❌ Lỗi khi cập nhật tour:', err);
+    return res.status(500).json({ error: 'Lỗi khi cập nhật tour' });
+  }
+};
+
+exports.getListProject = async (req, res) => {
+    try {
+        let listProject = await Project.find().lean().limit(10)
+        return functions.success(res, 'Lấy thông tin thành công', { listProject:  listProject})
+    } catch (error) {
+        console.log(error)
+    }
+}
 
 exports.convertPanoramaForProject = async (req, res) => {
   try {

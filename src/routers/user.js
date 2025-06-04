@@ -8,6 +8,8 @@ const { uploadFile } = require('../services/functions.js');
 
 router.post('/login', formData.parse(), controller.login);
 router.post('/register', formData.parse(), controller.register);
+router.post('/getInfor', functions.checkToken, formData.parse(), controller.getInfor);
+router.post('/getListProject', functions.checkToken, formData.parse(), controller.getListProject);
 router.post('/company/updateInfor',
     functions.checkToken,
     uploadFile(path.join(__dirname, '../public/images/company/introduce'), 5),

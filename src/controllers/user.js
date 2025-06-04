@@ -1,5 +1,6 @@
 const functions = require('../services/functions')
 const User = require('../models/user')
+const Project = require('../models/project')
 const argon2 = require('argon2')
 const multer = require('multer');
 const fs = require('fs');
@@ -83,6 +84,28 @@ exports.register = async (req, res) => {
         return functions.error(res, 'Thiếu thông tin truyền lên', 404)
     } catch (error) {
         return functions.error(res, error.message)
+    }
+}
+
+exports.getListProject = async (req, res) => {
+    try {
+        const infor = await req.user
+        const userId = infor.data.userId
+        let listProject = await Project.find({ 'userId': userId }).lean()
+        return functions.success(res, 'Lấy thông tin thành công', { listProject:  listProject})
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+exports.getInfor = async (req, res) => {
+    try {
+        const infor = await req.user
+        const userId = infor.data.userId
+        let getInfor = await User.findOne({ 'userId': userId }).lean()
+        return functions.success(res, 'Lấy thông tin thành công', { userInfor:  getInfor})
+    } catch (error) {
+        console.log(error)
     }
 }
 

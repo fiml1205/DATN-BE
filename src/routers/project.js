@@ -6,8 +6,11 @@ const functions = require('../services/functions');
 const controller = require('../controllers/project');
 const formData = require('express-form-data');
 
-router.post('/saveProject', formData.parse(), controller.saveProject);
+router.post('/create', formData.parse(), controller.createProject);
+router.post('/edit/:projectId', formData.parse(), controller.editProject);
 router.get('/:projectId', controller.getProject);
+router.post('/getListProject', formData.parse(), controller.getListProject);
+
 
 router.post(
   '/:projectId/convert',

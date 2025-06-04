@@ -4,6 +4,7 @@ require('dotenv').config();
 const user = require('./routers/user.js')
 const admin = require('./routers/admin')
 const project = require('./routers/project.js');
+const notification = require('./routers/notification.js');
 const connectDB = require('./config/db')
 const cors = require('cors');
 const rateLimit = require("express-rate-limit");
@@ -40,6 +41,7 @@ configureApp(app)
 app.use('/api/user', user)
 app.use('/api/admin', admin)
 app.use('/api/project', project)
+app.use('/api/notification', notification)
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
