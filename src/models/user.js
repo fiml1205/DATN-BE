@@ -34,29 +34,11 @@ const User = new mongoose.Schema({
     address: {
         type: String
     },
-    city: {
-        type: Number
-    },
-    district: {
-        type: Number
-    },
     email: {
         type: String
     },
     phone: {
         type: String
-    },
-    avatar: {
-        type: String
-    },
-    imageIntroduce: {
-        type: Array
-    },
-    vote: {
-        type: Number
-    },
-    latestOrderTime: {
-        type: Number
     },
     createdAt: {
         type: Number
@@ -64,9 +46,6 @@ const User = new mongoose.Schema({
     updatedAt: {
         type: Number
     },
-    comments: {
-        type: Array
-    }
 }, {
     versionKey: false
 })

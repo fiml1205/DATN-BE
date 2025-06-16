@@ -9,7 +9,6 @@ exports.createToken = async (data, time) => {
     try {
         return jwt.sign({ data }, process.env.NODE_SECRET, { expiresIn: time });
     } catch (e) {
-        console.log(e)
         return false;
     }
 };
@@ -34,6 +33,26 @@ exports.checkToken = (req, res, next) => {
     }
 };
 
+exports.checkTokenOptional = (req, res, next) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+            return next();
+        }
+
+        jwt.verify(token, process.env.NODE_SECRET, (err, user) => {
+            if (!err) {
+                req.user = user;
+            }
+            return next();
+        });
+    } catch (e) {
+        return next();
+    }
+};
+
 // call api success
 exports.success = (res, messsage = '', data = []) => {
     try {
@@ -52,7 +71,7 @@ exports.error = (res, message, code = 500) => {
         return res.status(code).json({ data: null, code, error: message });
     } catch (e) {
         return false;
-    }   
+    }
 };
 
 // get max Id
@@ -131,7 +150,31 @@ function storageFile(uploadPath, userId) {
     });
 }
 
-exports.uploadFile = (filePath, limit, fieldName = 'images') => {
+exports.uploadAvatar = (req, res, next) => {
+    try {
+        const userId = req.user?.data?.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Chưa xác thực' });
+        }
+
+        const avatarPath = path.join(__dirname, '../uploads/avatar');
+        const storage = storageFile(avatarPath, userId);
+        const upload = multer({ storage }).single('avatar');
+
+        upload(req, res, function (err) {
+            if (err) {
+                console.error("❌ Multer error:", err);
+                return res.status(500).json({ success: false, message: 'Lỗi khi upload avatar' });
+            }
+            next();
+        });
+    } catch (err) {
+        console.error("❌ uploadAvatar middleware error:", err);
+        return res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+};
+
+exports.uploadFile = (filePath, limit, fieldName = 'image') => {
     return (req, res, next) => {
         const userId = req?.user?.data?.userId || req.body.userId || req.query.userId || 'anonymous';
 
@@ -163,7 +206,6 @@ exports.uploadFile = (filePath, limit, fieldName = 'images') => {
         }).array(fieldName, limit);
 
         upload(req, res, function (err) {
-             console.log('DEBUG req.files:', req.files); 
             if (err instanceof multer.MulterError) {
                 return res.status(400).json({ error: 'Xảy ra lỗi trong quá trình upload ảnh (Multer)' });
             } else if (err) {

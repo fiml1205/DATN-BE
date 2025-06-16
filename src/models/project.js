@@ -1,10 +1,9 @@
 const mongoose = require('mongoose');
 
 const hotspotSchema = new mongoose.Schema({
-  position: {
-    type: [Number],
-    required: true,
-  },
+  position: [Number, Number, Number],
+  pitch: Number,
+  yaw: Number,
   label: String,
   targetSceneId: String,
 });
@@ -12,8 +11,13 @@ const hotspotSchema = new mongoose.Schema({
 const sceneSchema = new mongoose.Schema({
   id: String,
   name: String,
-  original: String,
+  type: {
+    type: String,
+    default: 'cube'
+  },
+  originalImage: String,
   cubePaths: [String],
+  tilesPath: String,
   audio: String,
   hotspots: [hotspotSchema],
   isFirst: Boolean
@@ -25,16 +29,21 @@ const tourStepSchema = new mongoose.Schema({
 });
 
 const projectSchema = new mongoose.Schema({
-  projectId: { type: String, required: true, unique: true },
-  userId: String,
+  projectId: { type: Number, required: true, unique: true },
+  userId: Number,
   title: String,
   description: String,
+  departureCity: Number,
   coverImage: String,
   departureDate: String,
   price: Number,
   sale: String,
   tourSteps: [tourStepSchema],
   scenes: [sceneSchema],
+  isLock: {
+    type: Boolean,
+    default: false
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Project', projectSchema);

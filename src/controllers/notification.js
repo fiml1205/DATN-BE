@@ -27,7 +27,6 @@ exports.getNoti = async (req, res) => {
     try {
         const userId = req.user.data.userId
         let getInfor = await Notification.find({ 'userIdTour': userId }).lean()
-        console.log(getInfor)
         return functions.success(res, 'Lấy bình luận thành công', { listNoti: getInfor })
     } catch (error) {
         console.log(error)

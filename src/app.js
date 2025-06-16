@@ -5,6 +5,10 @@ const user = require('./routers/user.js')
 const admin = require('./routers/admin')
 const project = require('./routers/project.js');
 const notification = require('./routers/notification.js');
+const image = require('./routers/image.js');
+const vote = require('./routers/vote.js');
+const comment = require('./routers/comment.js');
+const save = require('./routers/save');
 const connectDB = require('./config/db')
 const cors = require('cors');
 const rateLimit = require("express-rate-limit");
@@ -18,7 +22,6 @@ function configureApp(app) {
   app.use(express.urlencoded({ extended: false }));
   app.use(express.static(path.join(__dirname, 'public')))
   app.use(express.static(__dirname))
-  app.use(cors());
 
   app.use(function (err, req, res, next) {
       res.locals.message = err.message;
@@ -42,6 +45,10 @@ app.use('/api/user', user)
 app.use('/api/admin', admin)
 app.use('/api/project', project)
 app.use('/api/notification', notification)
+app.use('/api/image', image)
+app.use('/api/vote', vote)
+app.use('/api/comment', comment)
+app.use('/api/save', save);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)

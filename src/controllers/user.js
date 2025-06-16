@@ -6,6 +6,8 @@ const multer = require('multer');
 const fs = require('fs');
 const sanitize = require('mongo-sanitize');
 const axios = require("axios");
+const Vote = require('../models/vote');
+
 
 exports.login = async (req, res) => {
     try {
@@ -13,7 +15,7 @@ exports.login = async (req, res) => {
             password = req.body.password
         const redirect = req.query.redirect || "/";
         if (account && password) {
-            let login = await User.findOne({ 'account': account}).lean()
+            let login = await User.findOne({ 'account': account }).lean()
             if (login) {
                 const checkPassword = await argon2.verify(login.password, password)
                 if (checkPassword) {
@@ -92,7 +94,27 @@ exports.getListProject = async (req, res) => {
         const infor = await req.user
         const userId = infor.data.userId
         let listProject = await Project.find({ 'userId': userId }).lean()
-        return functions.success(res, 'Lấy thông tin thành công', { listProject:  listProject})
+        const listProjectWithVotes = await Promise.all(
+            listProject.map(async (project) => {
+                const votes = await Vote.find({ projectId: project.projectId });
+                const totalVotes = votes.length;
+                const averageRating =
+                    totalVotes === 0
+                        ? 0
+                        : Number(
+                            (votes.reduce((sum, v) => sum + v.rating, 0) / totalVotes).toFixed(1)
+                        );
+
+                return {
+                    ...project,
+                    vote: {
+                        total: totalVotes,
+                        average: averageRating,
+                    },
+                };
+            })
+        );
+        return functions.success(res, 'Lấy thông tin thành công', { listProject: listProjectWithVotes })
     } catch (error) {
         console.log(error)
     }
@@ -103,7 +125,7 @@ exports.getInfor = async (req, res) => {
         const infor = await req.user
         const userId = infor.data.userId
         let getInfor = await User.findOne({ 'userId': userId }).lean()
-        return functions.success(res, 'Lấy thông tin thành công', { userInfor:  getInfor})
+        return functions.success(res, 'Lấy thông tin thành công', { userInfor: getInfor })
     } catch (error) {
         console.log(error)
     }
@@ -182,3 +204,80 @@ exports.comment = async (req, res) => {
         console.log(error)
     }
 }
+
+exports.uploadAvatar = async (req, res) => {
+    const userId = req.user.data.userId;
+    const file = req.file;
+
+    if (!file) {
+        return res.status(400).json({ success: false, message: 'Không có file gửi lên' });
+    }
+
+    const avatarPath = `/uploads/avatar/${file.filename}`;
+    const user = await User.findOne({ userId });
+    if (!user) return res.status(404).json({ success: false, message: 'User không tồn tại' });
+
+    user.avatar = avatarPath;
+    await user.save();
+
+    return res.status(200).json({ success: true, avatar: avatarPath });
+};
+
+exports.updateUser = async (req, res) => {
+    try {
+        const { userId } = req.user.data;
+        const {
+            userName,
+            email,
+            phone,
+            address
+        } = req.body;
+
+        const user = await User.findOne({ userId });
+        if (!user) return res.status(404).json({ success: false, message: 'Không tìm thấy user' });
+
+        if (userName) user.userName = userName;
+        if (email) user.email = email;
+        if (phone) user.phone = phone;
+        if (address) user.address = address;
+
+        await user.save();
+        return res.status(200).json({ success: true, user });
+    } catch (err) {
+        console.error('❌ updateUser error:', err);
+        return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật user' });
+    }
+};
+
+exports.changePassword = async (req, res) => {
+    try {
+        const userId = req.user.data.userId;
+        const { passwordOld, passwordNew, passwordConfirm } = req.body;
+
+        if (!passwordOld || !passwordNew || !passwordConfirm) {
+            return res.status(400).json({ success: false, message: 'Thiếu thông tin đổi mật khẩu' });
+        }
+
+        const user = await User.findOne({ userId });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User không tồn tại' });
+        }
+
+        const match = await argon2.verify(user.password, passwordOld);
+        if (!match) {
+            return res.status(403).json({ success: false, message: 'Mật khẩu cũ không đúng' });
+        }
+
+        if (passwordNew !== passwordConfirm) {
+            return res.status(400).json({ success: false, message: 'Mật khẩu xác nhận không khớp' });
+        }
+
+        user.password = await argon2.hash(passwordNew);
+        await user.save();
+
+        return res.status(200).json({ success: true, message: 'Đổi mật khẩu thành công' });
+    } catch (err) {
+        console.error('❌ changePassword error:', err);
+        return res.status(500).json({ success: false, message: 'Lỗi server khi đổi mật khẩu' });
+    }
+};

@@ -18,4 +18,8 @@ router.post('/company/updateInfor',
 router.post('/getComments', formData.parse(), controller.getComments);
 router.post('/comment', formData.parse(), controller.comment);
 
+router.put('/update', functions.checkToken, controller.updateUser);
+router.post('/avatar', functions.checkToken, functions.uploadAvatar, controller.uploadAvatar);
+router.put('/change-password', functions.checkToken, controller.changePassword);
+
 module.exports = router

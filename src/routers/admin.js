@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const formData = require('express-form-data');
 const functions = require('../services/functions')
 const controller = require('../controllers/admin')
-const path = require('path');
-const { uploadFile } = require('../services/functions.js');
 
-// router.post('/listUsers',functions.checkToken, formData.parse(), controller.listUsers);
-router.post('/listUsers', formData.parse(), controller.listUser);
+router.get('/users', functions.checkToken, controller.users);
+router.delete('/user/:userId', functions.checkToken, controller.deleteUser);
+router.put('/user/:userId', functions.checkToken, controller.updateUser);
+router.get('/projects', functions.checkToken, controller.projects);
+router.delete('/project/:projectId', functions.checkToken, controller.deleteProject);
+router.patch('/project/:projectId/lock', functions.checkToken, controller.lockProject);
 
 module.exports = router
