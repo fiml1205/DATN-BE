@@ -6,7 +6,6 @@ exports.createOrUpdateVote = async (req, res) => {
   try {
     const userId = req.user.data.userId;
     const { projectId, rating } = req.body;
-    console.log(typeof projectId,typeof rating)
 
     if (!projectId || rating < 1 || rating > 5) {
       return res.status(400).json({ success: false, message: 'Dữ liệu không hợp lệ' });

@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const hotspotSchema = new mongoose.Schema({
-  position: [Number, Number, Number],
   pitch: Number,
   yaw: Number,
   label: String,
@@ -11,12 +10,7 @@ const hotspotSchema = new mongoose.Schema({
 const sceneSchema = new mongoose.Schema({
   id: String,
   name: String,
-  type: {
-    type: String,
-    default: 'cube'
-  },
   originalImage: String,
-  cubePaths: [String],
   tilesPath: String,
   audio: String,
   hotspots: [hotspotSchema],
