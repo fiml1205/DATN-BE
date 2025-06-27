@@ -22,6 +22,32 @@ exports.createProject = async (req, res) => {
   }
 };
 
+exports.updateProject = async (req, res) => {
+  try {
+    const data = req.body;
+    const { projectId } = data;
+
+    if (!projectId) {
+      return res.status(400).json({ error: 'Thiếu projectId' });
+    }
+
+    const updated = await Project.findOneAndUpdate(
+      { projectId },
+      { $set: data },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Không tìm thấy dự án' });
+    }
+
+    return res.json({ message: '✅ Đã cập nhật dự án', project: updated });
+  } catch (err) {
+    console.error('❌ Update project failed:', err);
+    return res.status(500).json({ error: 'Cập nhật dự án thất bại' });
+  }
+};
+
 exports.editProject = async (req, res) => {
   const { projectId } = req.params;
 
