@@ -14,12 +14,10 @@ exports.createComment = async (req, res) => {
       projectId,
       userId,
       content,
-      createdAt: new Date(),
     });
 
     return res.status(201).json({ success: true, comment });
   } catch (err) {
-    console.error('❌ Lỗi khi tạo comment:', err);
     return res.status(500).json({ success: false, message: 'Lỗi server khi tạo bình luận' });
   }
 };
@@ -42,7 +40,6 @@ exports.updateComment = async (req, res) => {
 
     return res.status(200).json({ success: true, comment });
   } catch (err) {
-    console.error('❌ Lỗi sửa comment:', err);
     return res.status(500).json({ success: false, message: 'Lỗi server khi sửa bình luận' });
   }
 };
@@ -62,7 +59,6 @@ exports.deleteComment = async (req, res) => {
     await Comment.deleteOne({ _id: id });
     return res.status(200).json({ success: true, message: 'Đã xoá comment' });
   } catch (err) {
-    console.error('❌ Lỗi xoá comment:', err);
     return res.status(500).json({ success: false, message: 'Lỗi server khi xoá bình luận' });
   }
 };
@@ -95,7 +91,6 @@ exports.getCommentsByProject = async (req, res) => {
 
     return res.status(200).json({ success: true, comments: commentsWithUser });
   } catch (err) {
-    console.error('❌ Lỗi khi lấy comment:', err);
     return res.status(500).json({ success: false, message: 'Lỗi server khi lấy bình luận' });
   }
 };

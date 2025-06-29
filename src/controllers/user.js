@@ -2,12 +2,7 @@ const functions = require('../services/functions')
 const User = require('../models/user')
 const Project = require('../models/project')
 const argon2 = require('argon2')
-const multer = require('multer');
-const fs = require('fs');
-const sanitize = require('mongo-sanitize');
-const axios = require("axios");
 const Vote = require('../models/vote');
-
 
 exports.login = async (req, res) => {
     try {
@@ -23,7 +18,6 @@ exports.login = async (req, res) => {
                         userId: login.userId,
                         type: login.type,
                         userName: login.userName,
-                        avatar: login.avatar,
                         webSignal: 'leanhtuan120599'
                     }, '7d')
                     return functions.success(res, 'Đăng nhập thành công', { SSToken: SSToken, redirect: redirect })
@@ -34,7 +28,6 @@ exports.login = async (req, res) => {
         }
         return functions.error(res, 'Thiếu thông tin truyền lên', 404)
     } catch (error) {
-        console.log(error)
         return functions.error(res, error.message)
     }
 }
@@ -53,7 +46,6 @@ exports.register = async (req, res) => {
                 if (!checkExist) {
                     const getMaxId = await functions.getMaxId(User, 'userId')
                     const hashPassword = await argon2.hash(password)
-                    const time = Date.now()
                     const data = {
                         userId: getMaxId,
                         account: account,
@@ -61,8 +53,6 @@ exports.register = async (req, res) => {
                         userName: account,
                         type: type,
                         authentication: 1,
-                        createdAt: time,
-                        updatedAt: time
                     }
                     if (checkPhone) {
                         data['phone'] = account
@@ -89,37 +79,6 @@ exports.register = async (req, res) => {
     }
 }
 
-exports.getListProject = async (req, res) => {
-    try {
-        const infor = await req.user
-        const userId = infor.data.userId
-        let listProject = await Project.find({ 'userId': userId }).lean()
-        const listProjectWithVotes = await Promise.all(
-            listProject.map(async (project) => {
-                const votes = await Vote.find({ projectId: project.projectId });
-                const totalVotes = votes.length;
-                const averageRating =
-                    totalVotes === 0
-                        ? 0
-                        : Number(
-                            (votes.reduce((sum, v) => sum + v.rating, 0) / totalVotes).toFixed(1)
-                        );
-
-                return {
-                    ...project,
-                    vote: {
-                        total: totalVotes,
-                        average: averageRating,
-                    },
-                };
-            })
-        );
-        return functions.success(res, 'Lấy thông tin thành công', { listProject: listProjectWithVotes })
-    } catch (error) {
-        console.log(error)
-    }
-}
-
 exports.getInfor = async (req, res) => {
     try {
         const infor = await req.user
@@ -127,53 +86,6 @@ exports.getInfor = async (req, res) => {
         let getInfor = await User.findOne({ 'userId': userId }).lean()
         return functions.success(res, 'Lấy thông tin thành công', { userInfor: getInfor })
     } catch (error) {
-        console.log(error)
-    }
-}
-
-exports.updateInforCompany = async (req, res) => {
-    try {
-        const userId = req.user.data.userId
-        let imageIntroduce = req.savedFileNames || null;
-        const {
-            userName,
-            address,
-            city,
-            district,
-            email,
-            phone,
-            costRange,
-            password
-        } = req.body
-
-        // if (!userName || !address || !city || !district) {
-        //     return functions.error(res, 'Thiếu thông tin truyền lên', 404);
-        // }
-        const checkUser = await User.findOne({ userId });
-        if (!checkUser) {
-            return functions.error(res, 'Không tồn tại dữ liệu');
-        }
-        if (imageIntroduce) {
-            imageIntroduce = imageIntroduce.map(element => `/images/company/introduce/${element}`);
-        }
-        const dataToUpdate = {
-            userName,
-            address,
-            city,
-            district,
-            password,
-            ...(phone && { phone }),
-            ...(email && { email }),
-            ...(costRange && { costRange }),
-            ...(imageIntroduce && { imageIntroduce })
-        };
-        const updatedUser = await User.findOneAndUpdate(
-            { userId },
-            dataToUpdate
-        );
-        return functions.success(res, 'Cập nhật thành công');
-    } catch (error) {
-        console.log(error)
         return functions.error(res, error.message)
     }
 }
@@ -184,7 +96,6 @@ exports.getComments = async (req, res) => {
         let comments = await User.findOne({ 'userID': userId }).select('comments').lean()
         return functions.success(res, 'Lấy bình luận thành công', { comments: comments.comments })
     } catch (error) {
-        console.log(error)
     }
 }
 
@@ -201,26 +112,31 @@ exports.comment = async (req, res) => {
         );
         return functions.success(res, 'Lấy bình luận thành công', { comments: comments.comments })
     } catch (error) {
-        console.log(error)
+        return functions.error(res, error.message)
     }
 }
 
 exports.uploadAvatar = async (req, res) => {
-    const userId = req.user.data.userId;
-    const file = req.file;
+    try {
+        const userId = req.user.data.userId;
+        const file = req.file;
 
-    if (!file) {
-        return res.status(400).json({ success: false, message: 'Không có file gửi lên' });
+        if (!file) {
+            return res.status(400).json({ success: false, message: 'Không có file gửi lên' });
+        }
+
+        const avatarPath = `/uploads/avatar/${file.filename}`;
+        const user = await User.findOne({ userId });
+        if (!user) return res.status(404).json({ success: false, message: 'User không tồn tại' });
+
+        user.avatar = avatarPath;
+        await user.save();
+
+        return res.status(200).json({ success: true, avatar: avatarPath });
+    } catch (error) {
+        return functions.error(res, 'Lỗi upload ảnh')
     }
 
-    const avatarPath = `/uploads/avatar/${file.filename}`;
-    const user = await User.findOne({ userId });
-    if (!user) return res.status(404).json({ success: false, message: 'User không tồn tại' });
-
-    user.avatar = avatarPath;
-    await user.save();
-
-    return res.status(200).json({ success: true, avatar: avatarPath });
 };
 
 exports.updateUser = async (req, res) => {
@@ -244,7 +160,6 @@ exports.updateUser = async (req, res) => {
         await user.save();
         return res.status(200).json({ success: true, user });
     } catch (err) {
-        console.error('❌ updateUser error:', err);
         return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật user' });
     }
 };
@@ -277,7 +192,6 @@ exports.changePassword = async (req, res) => {
 
         return res.status(200).json({ success: true, message: 'Đổi mật khẩu thành công' });
     } catch (err) {
-        console.error('❌ changePassword error:', err);
         return res.status(500).json({ success: false, message: 'Lỗi server khi đổi mật khẩu' });
     }
 };

@@ -68,7 +68,7 @@ exports.success = (res, messsage = '', data = []) => {
 // call api fail
 exports.error = (res, message, code = 500) => {
     try {
-        return res.status(code).json({ data: null, code, error: message });
+        return res.status(code).json({ data: null, code, message: message });
     } catch (e) {
         return false;
     }

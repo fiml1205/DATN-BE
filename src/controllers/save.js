@@ -1,7 +1,7 @@
 const SavedTour = require('../models/SavedTour');
 const Project = require('../models/project');
 const Vote = require('../models/vote');
-
+const functions = require('../services/functions');
 
 // Toggle lưu / bỏ lưu
 exports.toggleSave = async (req, res) => {
@@ -23,7 +23,6 @@ exports.toggleSave = async (req, res) => {
       return res.status(201).json({ success: true, saved: true });
     }
   } catch (err) {
-    console.error('❌ toggleSave error:', err);
     return res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
@@ -32,8 +31,10 @@ exports.toggleSave = async (req, res) => {
 exports.getSavedTours = async (req, res) => {
   try {
     const userId = req.user.data.userId;
+    const page = req.body.page || 1;
+    const limit = req.body.limit || 9;
 
-    const saved = await SavedTour.find({ userId }).lean();
+    const saved = await SavedTour.find({ userId }).sort({ updatedAt: -1 }).skip((page - 1) * limit).limit(limit).lean();
     const projectIds = saved.map((s) => s.projectId);
 
     const listProject = await Project.find({ projectId: { $in: projectIds } }).lean();
@@ -58,9 +59,8 @@ exports.getSavedTours = async (req, res) => {
       })
     );
 
-    return res.status(200).json({ success: true, savedTours: listProjectWithVotes });
+    return functions.success(res, 'Lấy thông tin thành công', { listProject: listProjectWithVotes })
   } catch (err) {
-    console.error('❌ getSavedTours error:', err);
     return res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
@@ -79,7 +79,6 @@ exports.checkSavedStatus = async (req, res) => {
 
     return res.status(200).json({ success: true, saved: isSaved });
   } catch (err) {
-    console.error('❌ checkSavedStatus error:', err);
     return res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };

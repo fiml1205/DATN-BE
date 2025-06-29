@@ -39,15 +39,9 @@ const User = new mongoose.Schema({
     },
     phone: {
         type: String
-    },
-    createdAt: {
-        type: Number
-    },
-    updatedAt: {
-        type: Number
-    },
+    }
 }, {
     versionKey: false
-})
+}, { timestamps: true })
 
 module.exports = mongoose.model('User', User)

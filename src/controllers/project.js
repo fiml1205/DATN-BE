@@ -17,7 +17,6 @@ exports.createProject = async (req, res) => {
     const saved = await Project.create(data);
     return res.json({ message: '✅ Project saved', project: saved });
   } catch (err) {
-    console.error('❌ Save project failed:', err);
     return res.status(500).json({ error: 'Lưu dự án thất bại' });
   }
 };
@@ -43,7 +42,6 @@ exports.updateProject = async (req, res) => {
 
     return res.json({ message: '✅ Đã cập nhật dự án', project: updated });
   } catch (err) {
-    console.error('❌ Update project failed:', err);
     return res.status(500).json({ error: 'Cập nhật dự án thất bại' });
   }
 };
@@ -64,7 +62,6 @@ exports.editProject = async (req, res) => {
 
     return res.json({ message: '✅ Đã cập nhật tour', project: updated });
   } catch (err) {
-    console.error('❌ Lỗi khi cập nhật tour:', err);
     return res.status(500).json({ error: 'Lỗi khi cập nhật tour' });
   }
 };
@@ -94,7 +91,6 @@ exports.getProject = async (req, res) => {
     const userVoteData = userId
       ? await Vote.findOne({ projectId, userId }).lean()
       : null;
-    console.log(req.user)
 
     return res.json({
       project,
@@ -106,16 +102,129 @@ exports.getProject = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('❌ Lỗi lấy dự án:', err);
     return res.status(500).json({ error: 'Lỗi server' });
   }
 };
 
 exports.getListProject = async (req, res) => {
   try {
-    let listProject = await Project.find().lean().limit(9)
+    const page = req.body.page || 1;
+    const limit = req.body.limit || 9;
+    const type = req.body.type ?? null;
+    // Nếu truyền type
+    if (type !== null) {
+      let query = {};
+      if (type == 0) {
+        query = { isForeign: false };
+      } else if (type == 1) {
+        query = { isForeign: true };
+      }
 
-    // Gắn thông tin vote cho từng project
+      const listProject = await Project.find(query)
+        .sort({ updatedAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+
+      const listProjectWithVotes = await Promise.all(
+        listProject.map(async (project) => {
+          const votes = await Vote.find({ projectId: project.projectId });
+          const totalVotes = votes.length;
+          const averageRating =
+            totalVotes === 0
+              ? 0
+              : Number(
+                (votes.reduce((sum, v) => sum + v.rating, 0) / totalVotes).toFixed(1)
+              );
+
+          return {
+            ...project,
+            vote: {
+              total: totalVotes,
+              average: averageRating,
+            },
+          };
+        })
+      );
+
+      return functions.success(res, 'Lấy thông tin thành công', {
+        listProject: listProjectWithVotes,
+      });
+    }
+
+    // Nếu KHÔNG truyền type → trả về cả 2 danh sách
+    const [domestic, foreign] = await Promise.all([
+      Project.find({ isForeign: false })
+        .sort({ updatedAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Project.find({ isForeign: true })
+        .sort({ updatedAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    // Gắn vote cho từng project của cả 2 danh sách
+    const domesticWithVotes = await Promise.all(
+      domestic.map(async (project) => {
+        const votes = await Vote.find({ projectId: project.projectId });
+        const totalVotes = votes.length;
+        const averageRating =
+          totalVotes === 0
+            ? 0
+            : Number(
+              (votes.reduce((sum, v) => sum + v.rating, 0) / totalVotes).toFixed(1)
+            );
+        return {
+          ...project,
+          vote: {
+            total: totalVotes,
+            average: averageRating,
+          },
+        };
+      })
+    );
+
+    const foreignWithVotes = await Promise.all(
+      foreign.map(async (project) => {
+        const votes = await Vote.find({ projectId: project.projectId });
+        const totalVotes = votes.length;
+        const averageRating =
+          totalVotes === 0
+            ? 0
+            : Number(
+              (votes.reduce((sum, v) => sum + v.rating, 0) / totalVotes).toFixed(1)
+            );
+        return {
+          ...project,
+          vote: {
+            total: totalVotes,
+            average: averageRating,
+          },
+        };
+      })
+    );
+
+    // Trả về 2 danh sách riêng
+    return functions.success(res, 'Lấy thông tin thành công', {
+      domesticProjects: domesticWithVotes,
+      foreignProjects: foreignWithVotes,
+    });
+
+  } catch (error) {
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.getListProjectOwn = async (req, res) => {
+  try {
+    const infor = await req.user
+    const userId = infor.data.userId
+    const page = req.body.page || 1;
+    const limit = req.body.limit || 9;
+    let listProject = await Project.find({ 'userId': userId }).sort({ updatedAt: -1 }).skip((page - 1) * limit).limit(limit).lean()
     const listProjectWithVotes = await Promise.all(
       listProject.map(async (project) => {
         const votes = await Vote.find({ projectId: project.projectId });
@@ -136,16 +245,14 @@ exports.getListProject = async (req, res) => {
         };
       })
     );
-
     return functions.success(res, 'Lấy thông tin thành công', { listProject: listProjectWithVotes })
   } catch (error) {
-    console.log(error)
+    return functions.error(res, error.message)
   }
 }
 
 exports.searchProjects = async (req, res) => {
   try {
-    console.log('test')
     const { keyword, city, price } = req.query;
 
     const filter = {};
@@ -189,7 +296,6 @@ exports.searchProjects = async (req, res) => {
 
     return res.status(200).json({ success: true, listProject: listProjectWithVotes });
   } catch (err) {
-    console.error("❌ Lỗi tìm kiếm tour:", err);
     return res.status(500).json({ success: false, message: "Lỗi server khi tìm kiếm tour" });
   }
 };

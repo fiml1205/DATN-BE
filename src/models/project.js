@@ -32,6 +32,11 @@ const projectSchema = new mongoose.Schema({
   departureDate: String,
   price: Number,
   sale: String,
+  timeLastBook: Date,
+  isForeign: {
+    type: Boolean,
+    default: false
+  },
   tourSteps: [tourStepSchema],
   scenes: [sceneSchema],
   isLock: {

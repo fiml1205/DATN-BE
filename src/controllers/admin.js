@@ -49,7 +49,6 @@ exports.users = async (req, res) => {
 
         return res.json({ success: true, users, totalCount });
     } catch (err) {
-        console.error('❌ listUser error:', err);
         return res.status(500).json({ success: false, message: 'Lỗi server khi lấy danh sách user' });
     }
 };
@@ -60,7 +59,6 @@ exports.deleteUser = async (req, res) => {
         await User.deleteOne({ userId });
         return res.json({ success: true, message: 'Đã xoá user' });
     } catch (err) {
-        console.error('deleteUser error:', err);
         return res.status(500).json({ success: false, message: 'Lỗi server khi xoá user' });
     }
 };
@@ -82,7 +80,6 @@ exports.updateUser = async (req, res) => {
 
         return res.json({ success: true, message: 'Cập nhật thành công' });
     } catch (err) {
-        console.error('updateUser error:', err);
         return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật user' });
     }
 };
@@ -122,7 +119,6 @@ exports.projects = async (req, res) => {
 
         return res.json({ success: true, projects, totalCount });
     } catch (err) {
-        console.error('❌ listProjects error:', err);
         return res.status(500).json({ success: false, message: 'Lỗi server khi lấy danh sách tour' });
     }
 };
@@ -138,24 +134,22 @@ exports.deleteProject = async (req, res) => {
 
         return res.json({ success: true, message: 'Đã xoá tour thành công' });
     } catch (err) {
-        console.error('❌ deleteProject error:', err);
         return res.status(500).json({ success: false, message: 'Lỗi server khi xoá tour' });
     }
 };
 
 exports.lockProject = async (req, res) => {
-  try {
-    const projectId = req.params.projectId;
-    const project = await Project.findOne({ projectId });
+    try {
+        const projectId = req.params.projectId;
+        const project = await Project.findOne({ projectId });
 
-    if (!project) return res.status(404).json({ success: false, message: 'Không tìm thấy tour' });
+        if (!project) return res.status(404).json({ success: false, message: 'Không tìm thấy tour' });
 
-    project.isLock = !project.isLock;
-    await project.save();
+        project.isLock = !project.isLock;
+        await project.save();
 
-    return res.json({ success: true, isLock: project.isLock });
-  } catch (err) {
-    console.error('❌ toggleLock error:', err);
-    return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật trạng thái khóa' });
-  }
+        return res.json({ success: true, isLock: project.isLock });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật trạng thái khóa' });
+    }
 };

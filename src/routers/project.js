@@ -9,6 +9,7 @@ router.post('/create', formData.parse(), controller.createProject);
 router.post('/update', formData.parse(), controller.updateProject);
 router.post('/edit/:projectId', formData.parse(), controller.editProject);
 router.post('/getListProject', controller.getListProject);
+router.post('/getListProjectOwn', functions.checkToken, controller.getListProjectOwn);
 router.get('/search', controller.searchProjects);
 router.get('/:projectId', functions.checkTokenOptional, controller.getProject);
 

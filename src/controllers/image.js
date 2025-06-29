@@ -29,18 +29,13 @@ exports.sliceImage360 = async (req, res) => {
       const destinationPath = path.join(outputDir, 'originalImage.jpg');
 
       if (error) {
-        console.error('❌ ERROR khi chạy generate.py:', error);
-        console.error('Stderr:', stderr);
         return functions.error(res, `❌ Lỗi xử lý ảnh 360: ${stderr || error.message}`);
       }
-
-      console.log('✅ generate.py SUCCESS:', stdout);
 
       // Di chuyển ảnh gốc sang thư mục sceneId
       try {
         await fs.move(inputPath, destinationPath, { overwrite: true });
       } catch (moveErr) {
-        console.warn("⚠️ Lỗi khi di chuyển ảnh gốc vào scene folder:", moveErr);
       }
 
       const tilesPathForClient = `/tiles/${projectId}/${sceneId}/`;
@@ -52,7 +47,6 @@ exports.sliceImage360 = async (req, res) => {
 
 
   } catch (err) {
-    console.error('❌ Lỗi server trong sliceImage360:', err);
     // Ensure temporary file is deleted in case of an error before exec starts
     if (req.file && req.file.path) {
       try {
@@ -60,7 +54,6 @@ exports.sliceImage360 = async (req, res) => {
           await fs.unlink(req.file.path);
         }
       } catch (e) {
-        console.warn("⚠️ Lỗi xóa file tạm (trong catch chính):", e);
       }
     }
     return functions.error(res, '❌ Lỗi server không xác định');
@@ -73,15 +66,12 @@ exports.deleteImage = async (req, res) => {
     const sceneId = req.body.sceneId;
     const sceneFolder = path.resolve(__dirname, `../public/tiles/${projectId}/${sceneId}`);
     if (!fs.existsSync(sceneFolder)) {
-      console.log('Folder does not exist:', sceneFolder);
       return functions.error(res, 'Folder not found');
     }
     await fs.remove(sceneFolder);
-    console.log(sceneFolder)
     await fs.remove(sceneFolder);
     return functions.success(res, 'Delele success');
   } catch (err) {
-    console.error('Delete error:', err);
     return functions.error(res, 'Delete failed');
   }
 };

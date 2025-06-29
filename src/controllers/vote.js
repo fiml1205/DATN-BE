@@ -28,7 +28,6 @@ exports.createOrUpdateVote = async (req, res) => {
 
     return res.status(200).json({ success: true, vote });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ success: false, message: 'Lỗi khi vote' });
   }
 };
@@ -51,7 +50,6 @@ exports.getProjectVotes = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ success: false, message: 'Lỗi khi lấy dữ liệu vote' });
   }
 };
